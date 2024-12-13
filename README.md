@@ -17,14 +17,15 @@ docker run \
     --name comfyui \
     --detach \
     --restart unless-stopped \
-    --volume <path/to/models/folder>:/opt/comfyui/models \
+    --volume "<path/to/models/folder>:/opt/comfyui/models:rw" \
+    --volume "<path/to/custom/nodes/folder>:/opt/comfyui/custom_nodes:rw" \
     --publish 8188:8188 \
     --runtime nvidia \
     --gpus all \
     ghcr.io/lecode-official/comfyui-docker:latest
 ```
 
-Please note, that the `<path/to/models/folder>` must be replaced with a path to a folder on the host system where the models will be stored, e.g., `$HOME/.comfyui`.
+Please note, that the `<path/to/models/folder>` and `<path/to/custom/nodes/folder>` must be replaced with paths to directories on the host system where the models and custom nodes will be stored, e.g., `$HOME/.comfyui/models` and `$HOME/.comfyui/custom-nodes`, which can be created like so: `mkdir -p $HOME/.comfyui/{models,custom-nodes}`.
 
 The `--detach` flag causes the container to run in the background and `--restart unless-stopped` configures the Docker Engine to automatically restart the container if it stopped itself, experienced an error, or the computer was shutdown, unless you explicitly stopped the container using `docker stop`. This means that ComfyUI will be automatically started in the background when you boot your computer. The `--runtime nvidia` and `--gpus all` arguments enable ComfyUI to access the GPUs of your host system. If you do not want to expose all GPUs, you can specify the desired GPU index or ID instead.
 
@@ -35,6 +36,29 @@ If you want to stop ComfyUI, you can use the following commands:
 ```shell
 docker stop comfyui
 docker rm comfyui
+```
+
+## Updating
+
+To update ComfyUI Docker to the latest version you have to first stop the running container, then pull the new version, optionally remove dangling images, and then restart the container:
+
+```shell
+docker stop comfyui
+docker rm comfyui
+
+docker pull ghcr.io/lecode-official/comfyui-docker:latest
+docker image prune # Optionally remove dangling images
+
+docker run \
+    --name comfyui \
+    --detach \
+    --restart unless-stopped \
+    --volume "<path/to/models/folder>:/opt/comfyui/models:rw" \
+    --volume "<path/to/custom/nodes/folder>:/opt/comfyui/custom_nodes:rw" \
+    --publish 8188:8188 \
+    --runtime nvidia \
+    --gpus all \
+    ghcr.io/lecode-official/comfyui-docker:latest
 ```
 
 ## Building
@@ -53,7 +77,8 @@ docker run \
     --name comfyui \
     --detach \
     --restart unless-stopped \
-    --volume <path/to/models/folder>:/opt/comfyui/models \
+    --volume "<path/to/models/folder>:/opt/comfyui/models:rw" \
+    --volume "<path/to/custom/nodes/folder>:/opt/comfyui/custom_nodes:rw" \
     --publish 8188:8188 \
     --runtime nvidia \
     --gpus all \

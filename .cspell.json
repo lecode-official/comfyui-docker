@@ -2,8 +2,8 @@
     // Version of the settings file, this should always be 0.2
     "version": "0.2",
 
-    // The code in this repository is checked against British English, American English, and German
-    "language": "en-gb,en-us,de-de",
+    // The code in this repository is checked against British English and American English
+    "language": "en-gb,en-us",
 
     // A list of file types that should be enabled (not all file types are enabled by default)
     "enableFiletypes": [
@@ -21,7 +21,7 @@
         "source/PersonalWebsite/Assets/libraries/**/*"
     ],
 
-    // A list of dictionaries that should be added beyond the American English dictionary
+    // A list of dictionaries that should be added beyond the British English and American English dictionaries
     "dictionaries": [
 
         // Dictionaries that contain common misspellings
@@ -32,11 +32,8 @@
         // Dictionaries that contain the keywords of the programming, markup, styling, and configuration languages used in the project
         "docker",
 
-        // Other dictionaries, that contain the names of well-known companies, common acronyms related to computing, words used in data science,
-        // common file extensions, common font names that may be used in CSS, common words often encountered in full-stack development, the
-        // popular blind text Lorem Ipsum often used for testing text layout, terms common in computer networking, the most popular NPM packages that
-        // may be used in Angular projects, terms used in popular public licenses, common software terms, and miscellaneous terms that are common in
-        // software projects
+        // Other dictionaries, that contain sub-specific words and names
+        // projects
         "companies",
         "computing-acronyms",
         "data-science",
@@ -65,8 +62,17 @@
     // A list of words that are not in the included default dictionary for British English, American English, or German
     "words": [
         "comfyui",
+        "controlnet",
         "cudnn",
+        "findall",
+        "gligen",
+        "hypernetworks",
         "lecode",
+        "loras",
+        "photomaker",
+        "PYTHONPATH",
+        "pytorch",
+        "unet",
         "vsicons"
     ]
 }
