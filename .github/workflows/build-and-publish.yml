@@ -40,6 +40,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Installs Python, which is used to extract the version of ComfyUI and the ComfyUI Manager from the Dockerfile using a regular expression
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
       # Logs in to the GitHub Container Registry registry using the account of the user that triggered the workflow run and the GitHub token that is
       # an automatically generated secret that is usually only used to access the repository (the permissions defined above allow the token to also
       # publish Docker images to the GitHub Container Registry) that will publish the packages. Once published, the packages are scoped to the account defined here.
@@ -50,6 +56,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Extracts the versions of ComfyUI and the ComfyUI Manager from the Dockerfile using a Python script; the versions are written to the output
+      # file, which are available in subsequent steps under steps.versions.outputs.COMFYUI_VERSION and steps.versions.outputs.COMFYUI_MANAGER_VERSION;
+      # the versions are used to tag the Docker image, so that users know which versions of ComfyUI and the ComfyUI Manager are included in the image
+      - name: Extract ComfyUI & ComfyUI Manager Versions
+        id: versions
+        shell: python
+        run: |
+          import os
+          import re
+
+          def get_version(repository_name: str) -> str:
+            with open('Dockerfile', mode='r', encoding='utf-8') as dockerfile:
+                matches = re.findall(
+                  rf'git clone [a-zA-Z0-9:\/\.]+\/{repository_name}\.git[a-zA-Z0-9\-\/&\\\n ]+git checkout tags\/v?([0-9\.]+)',
+                  dockerfile.read(),
+                  re.MULTILINE
+                )
+                return matches[0] if matches else 'unknown'
+
+          with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output_file:
+            output_file.write(f'COMFYUI_VERSION={get_version('ComfyUI')}\n')
+            output_file.write(f'COMFYUI_MANAGER_VERSION={get_version('ComfyUI-Manager')}\n')
+
       # Extracts metadata from the Git repository and GitHub, which are then used to label and tag the Docker image that will be build in the next
       # step; the "id" property specifies that the output of this step will be available in subsequent steps under the name "metadata"; tags for the
       # SHA of the commit, the full semantic version extracted from the current tag (e.g., tag "v1.2.3" will be extracted as "1.2.3"), and the major
@@ -57,14 +86,16 @@ jobs:
       # besides the hardcoded labels for the title and authors of the image, the GitHub description, GitHub license, GitHub revision, GitHub source
       # URL, GitHub URL, and creation date and time are extracted as labels
       - name: Extract Tags & Labels for Docker
-        id: metadata
+        id: docker-image-metadata
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha
-            type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{version}}-comfyui-${{ steps.versions.outputs.COMFYUI_VERSION }}
+            type=semver,pattern={{version}}-comfyui-${{ steps.versions.outputs.COMFYUI_VERSION }}-comfyui-manager-${{ steps.versions.outputs.COMFYUI_MANAGER_VERSION }}
           labels: |
             org.opencontainers.image.title=ComfyUI Docker
             org.opencontainers.image.authors=David Neumann <david.neumann@lecode.de>
@@ -73,13 +104,13 @@ jobs:
       # the build context, which is the directory that contains the Dockerfile; the tags and labels extracted in the previous step are used to tag
       # and label the image
       - name: Build and Push Docker Image
-        id: push
+        id: build-and-push-docker-image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
+          tags: ${{ steps.docker-image-metadata.outputs.tags }}
+          labels: ${{ steps.docker-image-metadata.outputs.labels }}
 
       # Generates an artifact attestation for the image, which is an unforgeable statement about where and how it was built; it increases supply chain
       # security for people who consume the image
@@ -87,5 +118,5 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.build-and-push-docker-image.outputs.digest }}
           push-to-registry: true
