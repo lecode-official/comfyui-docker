@@ -4,7 +4,9 @@ FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
 
 # Installs Git, because ComfyUI and the ComfyUI Manager are installed by cloning their respective Git repositories
 RUN apt update --assume-yes && \
-    apt install --assume-yes git
+    apt install --assume-yes \
+        git \
+        sudo
 
 # Clones the ComfyUI repository and checks out the latest release
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui && \
@@ -34,7 +36,8 @@ WORKDIR /opt/comfyui
 EXPOSE 8188
 
 # Adds the startup script to the container; the startup script will create all necessary directories in the models and custom nodes volumes that were
-# mounted to the container and symlink the ComfyUI Manager to the correct directory
+# mounted to the container and symlink the ComfyUI Manager to the correct directory; it will also create a user with the same UID and GID as the user
+# that started the container, so that the files created by the container are owned by the user that started the container and not the root user
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
