@@ -65,6 +65,7 @@
         "controlnet",
         "cudnn",
         "findall",
+        "getent",
         "gligen",
         "hypernetworks",
         "lecode",
