@@ -67,12 +67,17 @@
         "findall",
         "getent",
         "gligen",
+        "glx",
         "hypernetworks",
         "lecode",
+        "libgl",
+        "libglib",
+        "libgthread",
         "loras",
         "photomaker",
         "PYTHONPATH",
         "pytorch",
+        "Subpack",
         "unet",
         "vsicons"
     ]
