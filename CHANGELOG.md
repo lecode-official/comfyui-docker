@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0 (March 24, 2025)
+
+- Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.5.1, CUDA 12.4 and cuDNN 9 to PyTorch 2.6.0 CUDA 12.4 and cuDNN 9).
+- Updated the ComfyUI version to the latest version (from ComfyUI 0.3.7 to ComfyUI 0.3.27).
+- Updated the ComfyUI Manager version to the latest version (from ComfyUI Manager 2.55.5 to ComfyUI Manager 3.31.8).
+- Installed the packages `libgl1-mesa-glx` and `libglib2.0-0`, which will hopefully fix issues with the ComfyUI Impact Pack, ComfyUI Impact Subpack, and ComfyUI Inspire Pack custom nodes that were missing the `libGL.so.1` and `libgthread-2.0.so.0` libraries.
+- The APT cache is now being cleaned after installing the packages to reduce the image size.
+
 ## v0.2.0 (December 16, 2024)
 
 - Previously, only the model files were stored outside of the container, but the custom nodes installed by ComfyUI Manager were not. The reason was that the ComfyUI Manager itself is implemented as a custom node, which means that mounting a host system directory into the custom nodes directory would hide the ComfyUI Manager. This problem was fixed by installing the ComfyUI Manager in a separate directory and symlinking it upon container startup into the mounted directory.
