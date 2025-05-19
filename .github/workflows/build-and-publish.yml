@@ -69,15 +69,15 @@ jobs:
           def get_version(repository_name: str) -> str:
             with open('Dockerfile', mode='r', encoding='utf-8') as dockerfile:
                 matches = re.findall(
-                  rf'git clone [a-zA-Z0-9:\/\.]+\/{repository_name}\.git[a-zA-Z0-9\-\/&\\\n ]+git checkout tags\/v?([0-9\.]+)',
+                  rf'{repository_name}=\/v?([0-9\.]+)',
                   dockerfile.read(),
                   re.MULTILINE
                 )
                 return matches[0] if matches else 'unknown'
 
           with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output_file:
-            output_file.write(f'COMFYUI_VERSION={get_version('ComfyUI')}\n')
-            output_file.write(f'COMFYUI_MANAGER_VERSION={get_version('ComfyUI-Manager')}\n')
+            output_file.write(f'COMFYUI_VERSION={get_version('COMFYUI_VERSION')}\n')
+            output_file.write(f'COMFYUI_MANAGER_VERSION={get_version('COMFYUI_MANAGER_VERSION')}\n')
 
       # Extracts metadata from the Git repository and GitHub, which are then used to label and tag the Docker image that will be build in the next
       # step; the "id" property specifies that the output of this step will be available in subsequent steps under the name "metadata"; tags for the
