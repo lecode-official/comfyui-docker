@@ -7,6 +7,7 @@
 - Updated the ComfyUI Manager version to the latest version (from ComfyUI Manager 3.31.8 to ComfyUI Manager 3.33).
 - The version numbers of ComfyUI, ComfyUI Manager, and the base image are now stored in arguments in the Dockerfile. This makes it easier to update the image in the future, because the version numbers can be changed in one place at the top of the Dockerfile.
 - The ComfyUI and ComfyUI Manager repositories are now cloned with the `--depth 1` option followed by only fetching the specific tag of the specified version, which reduces the size of the image by not including the full commit history.
+- Moved the [`Dockerfile`](source/Dockerfile) and the [`entrypoint.sh`](source/entrypoint.sh) script to a new [`source`](source) directory, which is the standard directory for storing source code in Git repositories.
 - A [list of contributors to the project](CONTRIBUTORS.md) was added to the repository.
 - This version of ComfyUI Docker was made possible by the contributions of [Chris TenHarmsel](@epchris).
 
