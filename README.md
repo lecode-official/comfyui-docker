@@ -74,7 +74,7 @@ If you want to use the bleeding edge development version of the Docker image, yo
 
 ```shell
 git clone https://github.com/lecode-official/comfyui-docker.git
-docker build --tag lecode/comfyui-docker:latest comfyui-docker
+docker build --tag lecode/comfyui-docker:latest source
 ```
 
 Now, a container can be started like so:

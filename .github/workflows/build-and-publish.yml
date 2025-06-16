@@ -68,7 +68,7 @@ jobs:
           import re
 
           def get_version(version_variable_name: str) -> str:
-            with open('Dockerfile', mode='r', encoding='utf-8') as dockerfile:
+            with open('source/Dockerfile', mode='r', encoding='utf-8') as dockerfile:
               match = re.search(
                 rf'^ARG {version_variable_name}=v?([0-9\.-a-z]+)$',
                 dockerfile.read(),
@@ -108,7 +108,7 @@ jobs:
         id: build-and-push-docker-image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: source
           push: true
           tags: ${{ steps.docker-image-metadata.outputs.tags }}
           labels: ${{ steps.docker-image-metadata.outputs.labels }}
