@@ -49,7 +49,12 @@
     // Configures the icon theme to be VSCode Icons and adapts the icons of certain files and directories for the VSCode Icons plugin
     "workbench.iconTheme": "vscode-icons",
     "vsicons.associations.files": [
+        {"icon": "docz", "extensions": ["README.md"], "filename": true, "format": "svg"},
+        {"icon": "janet", "extensions": ["CONTRIBUTORS.md"], "filename": true, "format": "svg"},
+        {"icon": "todo", "extensions": ["CHANGELOG.md"], "filename": true, "format": "svg"},
         {"icon": "vscode", "extensions": [".vscode/extensions.json", ".vscode/settings.json"], "filename": true, "format": "svg"}
     ],
-    "vsicons.associations.folders": []
+    "vsicons.associations.folders": [
+        {"icon": "github", "extensions": ["workflows"], "format": "svg"}
+    ]
 }

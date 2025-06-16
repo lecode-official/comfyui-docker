@@ -48,7 +48,8 @@ jobs:
 
       # Logs in to the GitHub Container Registry registry using the account of the user that triggered the workflow run and the GitHub token that is
       # an automatically generated secret that is usually only used to access the repository (the permissions defined above allow the token to also
-      # publish Docker images to the GitHub Container Registry) that will publish the packages. Once published, the packages are scoped to the account defined here.
+      # publish Docker images to the GitHub Container Registry) that will publish the packages; once published, the packages are scoped to the account
+      # defined here
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -66,14 +67,14 @@ jobs:
           import os
           import re
 
-          def get_version(repository_name: str) -> str:
+          def get_version(version_variable_name: str) -> str:
             with open('Dockerfile', mode='r', encoding='utf-8') as dockerfile:
-                matches = re.findall(
-                  rf'{repository_name}=\/v?([0-9\.]+)',
-                  dockerfile.read(),
-                  re.MULTILINE
-                )
-                return matches[0] if matches else 'unknown'
+              match = re.search(
+                rf'^ARG {version_variable_name}=v?([0-9\.-a-z]+)$',
+                dockerfile.read(),
+                re.MULTILINE
+              )
+              return match.group(1) if match else 'unknown'
 
           with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output_file:
             output_file.write(f'COMFYUI_VERSION={get_version('COMFYUI_VERSION')}\n')
