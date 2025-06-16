@@ -7,6 +7,12 @@
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
 
+    // Specifies the file types for files that are incorrectly detected by Visual Studio Code, for example, the LICENSE file is detected as a Markdown
+    // file, but it is actually a plain text file, which causes the Markdown linter to complain about the file
+    "files.associations": {
+        "LICENSE": "plaintext"
+    },
+
     // A list of files that are not displayed in the file explorer of Visual Studio Code
     "files.exclude": {
         "**/.DS_Store": true,

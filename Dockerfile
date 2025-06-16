@@ -1,8 +1,8 @@
 
 # Defines the versions of ComfyUI, ComfyUI Manager, and PyTorch to use
-ARG COMFYUI_VERSION=v0.3.34
-ARG COMFYUI_MANAGER_VERSION=3.32.3
-ARG PYTORCH_VERSION=2.7.0-cuda12.6-cudnn9-runtime
+ARG COMFYUI_VERSION=v0.3.40
+ARG COMFYUI_MANAGER_VERSION=3.33
+ARG PYTORCH_VERSION=2.7.1-cuda12.6-cudnn9-runtime
 
 # This image is based on the latest official PyTorch image, because it already contains CUDA, CuDNN, and PyTorch
 FROM pytorch/pytorch:${PYTORCH_VERSION}
@@ -28,7 +28,7 @@ RUN git clone --depth=1 https://github.com/comfyanonymous/ComfyUI.git /opt/comfy
 # location upon startup; the reason for this is that the ComfyUI Manager must be installed in the same directory that it installs custom nodes to, but
 # this directory is mounted as a volume, so that the custom nodes are not installed inside of the container and are not lost when the container is
 # removed; this way, the custom nodes are installed on the host machine
-RUN git clone --depth=1 https://github.com/ltdrdata/ComfyUI-Manager.git /opt/comfyui-manager && \
+RUN git clone --depth=1 https://github.com/Comfy-Org/ComfyUI-Manager.git /opt/comfyui-manager && \
     cd /opt/comfyui-manager && \
     git fetch origin ${COMFYUI_MANAGER_VERSION} && \
     git checkout FETCH_HEAD

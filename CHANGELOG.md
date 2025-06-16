@@ -2,9 +2,9 @@
 
 ## v0.4.0 (June 16, 2025)
 
-- Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.6.0, CUDA 12.4, and cuDNN 9 to PyTorch 2.7.0, CUDA 12.6, and cuDNN 9).
-- Updated the ComfyUI version to the latest version (from ComfyUI 0.3.27 to ComfyUI 0.3.34).
-- Updated the ComfyUI Manager version to the latest version (from ComfyUI Manager 3.31.8 to ComfyUI Manager 3.32.3).
+- Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.6.0, CUDA 12.4, and cuDNN 9 to PyTorch 2.7.1, CUDA 12.6, and cuDNN 9).
+- Updated the ComfyUI version to the latest version (from ComfyUI 0.3.27 to ComfyUI 0.3.40).
+- Updated the ComfyUI Manager version to the latest version (from ComfyUI Manager 3.31.8 to ComfyUI Manager 3.33).
 - The version numbers of ComfyUI, ComfyUI Manager, and the base image are now stored in arguments in the Dockerfile. This makes it easier to update the image in the future, because the version numbers can be changed in one place at the top of the Dockerfile.
 - The ComfyUI and ComfyUI Manager repositories are now cloned with the `--depth 1` option followed by only fetching the specific tag of the specified version, which reduces the size of the image by not including the full commit history.
 - A [list of contributors to the project](CONTRIBUTORS.md) was added to the repository.

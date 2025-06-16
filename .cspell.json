@@ -65,6 +65,7 @@
         "controlnet",
         "cudnn",
         "docz",
+        "epchris",
         "findall",
         "getent",
         "gligen",
