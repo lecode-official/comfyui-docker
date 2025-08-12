@@ -68,12 +68,31 @@ docker run \
     ghcr.io/lecode-official/comfyui-docker:latest
 ```
 
+If you want to pass additional command line arguments to ComfyUI, you can do so by specifying them as the command when starting the container. For example, if you want to allow external web apps to connect to ComfyUI in the container, you can add the `--enable-cors-header` argument like so:
+
+```shell
+docker run \
+    --name comfyui \
+    --detach \
+    --restart unless-stopped \
+    --env USER_ID="$(id -u)" \
+    --env GROUP_ID="$(id -g)" \
+    --volume "<path/to/models/folder>:/opt/comfyui/models:rw" \
+    --volume "<path/to/custom/nodes/folder>:/opt/comfyui/custom_nodes:rw" \
+    --publish 8188:8188 \
+    --runtime nvidia \
+    --gpus all \
+    ghcr.io/lecode-official/comfyui-docker:latest \
+    --enable-cors-header <origin>
+```
+
 ## Building
 
 If you want to use the bleeding edge development version of the Docker image, you can also clone the repository and build the image yourself:
 
 ```shell
 git clone https://github.com/lecode-official/comfyui-docker.git
+cd comfyui-docker
 docker build --tag lecode/comfyui-docker:latest source
 ```
 
