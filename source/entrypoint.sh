@@ -53,11 +53,20 @@ done
 # Under normal circumstances, the container would be run as the root user, which is not ideal, because the files that are created by the container in
 # the volumes mounted from the host, i.e., custom nodes and models downloaded by the ComfyUI Manager, are owned by the root user; the user can specify
 # the user ID and group ID of the host user as environment variables when starting the container; if these environment variables are set, a non-root
-# user with the specified user ID and group ID is created, and the container is run as this user
+# user with the specified user ID and group ID is created, and ComfyUI is run as this user; ComfyUI is started at its default port (--port 8188); the
+# IP address is changed from localhost to 0.0.0.0 (--listen 0.0.0.0), because Docker is only forwarding traffic to the IP address it assigns to the
+# container, which is unknown at build time; listening to 0.0.0.0 means that ComfyUI listens to all incoming traffic; the auto-launch feature is
+# disabled (--disable-auto-launch), because we do not want (nor is it possible) to open a browser window in a Docker container; to allow users to pass
+# in additional command line arguments ("$@"), for example, --enable-cors-header to enable CORS and allow external web apps to interact with ComfyUI
+# in this container
 if [ -z "$USER_ID" ] || [ -z "$GROUP_ID" ];
 then
     echo "Running container as $USER..."
-    exec "$@"
+    exec /opt/conda/bin/python main.py \
+        --port 8188 \
+        --listen 0.0.0.0 \
+        --disable-auto-launch \
+        "$@"
 else
     echo "Creating non-root user..."
     getent group $GROUP_ID > /dev/null 2>&1 || groupadd --gid $GROUP_ID comfyui-user
@@ -66,6 +75,11 @@ else
     chown --recursive $USER_ID:$GROUP_ID /opt/comfyui-manager
     export PATH=$PATH:/home/comfyui-user/.local/bin
 
-    echo "Running container as $USER..."
-    sudo --set-home --preserve-env=PATH --user \#$USER_ID "$@"
+    echo "Running container as comfyui-user ($USER_ID:$GROUP_ID)..."
+    sudo --set-home --preserve-env=PATH --user \#$USER_ID \
+        /opt/conda/bin/python main.py \
+            --port 8188 \
+            --listen 0.0.0.0 \
+            --disable-auto-launch \
+            "$@"
 fi

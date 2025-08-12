@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.0 (August 12, 2025)
+
+- The ComfyUI Manager repository has been moved to a new organization and therefore, the URL from which it can be cloned has changed. This URL was updated in the Dockerfile.
+- It is now possible to pass additional command line arguments to ComfyUI in the `docker run` command. This was done by moving the `CMD` from the Dockerfile to the `entrypoint.sh` script. Now, users can specify additional command line arguments when starting the container as the command, which are then passed to ComfyUI. The read me was updated to showcase this.
+- In the read me, the commands for building and running the image locally had a small issue: After cloning the repository, the current directory was not changed to the cloned repository, which would lead to an error when building the image. This was fixed by adding a `cd comfyui-docker` command after the `git clone` command.
+- This version of ComfyUI Docker was made possible by the contributions of [Patrick Kranz](@LokiMidgard) and [Alex Reynolds](@primlock).
+
 ## v0.4.0 (June 16, 2025)
 
 - Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.6.0, CUDA 12.4, and cuDNN 9 to PyTorch 2.7.1, CUDA 12.6, and cuDNN 9).
