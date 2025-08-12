@@ -50,7 +50,7 @@
     "cSpell.ignorePaths": [],
     "cSpell.useGitignore": false,
     "cSpell.diagnosticLevel": "Error",
-    "cSpell.import": [".cspell.json"],
+    "cSpell.import": ["${workspaceFolder}/.cspell.json"],
 
     // Configures the icon theme to be VSCode Icons and adapts the icons of certain files and directories for the VSCode Icons plugin
     "workbench.iconTheme": "vscode-icons",
