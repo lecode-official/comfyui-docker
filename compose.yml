@@ -1,0 +1,25 @@
+---
+
+name: comfyui-docker
+
+services:
+  comfyui:
+    image: ghcr.io/lecode-official/comfyui-docker:latest
+    container_name: comfyui
+    restart: unless-stopped
+    environment:
+      USER_ID: "${USER_ID:-1000}"
+      GROUP_ID: "${GROUP_ID:-1000}"
+    ports:
+      - "8188:8188"
+    volumes:
+      - ${MODELS_PATH:-${HOME}/.comfyui/models}:/opt/comfyui/models:rw
+      - ${CUSTOM_NODES_PATH:-${HOME}/.comfyui/custom-nodes}:/opt/comfyui/custom_nodes:rw
+      - ${OUTPUT_PATH:-${HOME}/.comfyui/output}:/opt/comfyui/output:rw
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

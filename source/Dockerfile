@@ -1,8 +1,8 @@
 
 # Defines the versions of ComfyUI, ComfyUI Manager, and PyTorch to use
-ARG COMFYUI_VERSION=v0.3.49
-ARG COMFYUI_MANAGER_VERSION=3.35
-ARG PYTORCH_VERSION=2.8.0-cuda12.9-cudnn9-runtime
+ARG COMFYUI_VERSION=v0.8.2
+ARG COMFYUI_MANAGER_VERSION=4.0.5
+ARG PYTORCH_VERSION=2.9.1-cuda13.0-cudnn9-runtime
 
 # This image is based on the latest official PyTorch image, because it already contains CUDA, CuDNN, and PyTorch
 FROM pytorch/pytorch:${PYTORCH_VERSION}
@@ -17,7 +17,7 @@ RUN apt update --assume-yes && \
     rm -rf /var/lib/apt/lists/*
 
 # Clones the ComfyUI repository and checks out the latest release
-RUN git clone --depth=1 https://github.com/comfyanonymous/ComfyUI.git /opt/comfyui && \
+RUN git clone --depth=1 https://github.com/Comfy-Org/ComfyUI.git /opt/comfyui && \
     cd /opt/comfyui && \
     git fetch origin ${COMFYUI_VERSION} && \
     git checkout FETCH_HEAD

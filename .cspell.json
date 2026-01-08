@@ -61,6 +61,7 @@
 
     // A list of words that are not in the included default dictionary for British English, American English, or German
     "words": [
+        "comfyanonymous",
         "comfyui",
         "controlnet",
         "cudnn",
@@ -79,6 +80,7 @@
         "libglib",
         "libgthread",
         "loras",
+        "Marinov",
         "photomaker",
         "PYTHONPATH",
         "pytorch",
