@@ -2,7 +2,7 @@
 # Defines the versions of ComfyUI, ComfyUI Manager, and PyTorch to use
 ARG COMFYUI_VERSION=v0.8.2
 ARG COMFYUI_MANAGER_VERSION=4.0.5
-ARG PYTORCH_VERSION=2.9.1-cuda13.0-cudnn9-runtime
+ARG PYTORCH_VERSION=2.9.1-cuda12.8-cudnn9-runtime
 
 # This image is based on the latest official PyTorch image, because it already contains CUDA, CuDNN, and PyTorch
 FROM pytorch/pytorch:${PYTORCH_VERSION}
@@ -17,10 +17,9 @@ RUN apt update --assume-yes && \
     rm -rf /var/lib/apt/lists/*
 
 # Clones the ComfyUI repository and checks out the latest release
-RUN git clone --depth=1 https://github.com/Comfy-Org/ComfyUI.git /opt/comfyui && \
+RUN git clone https://github.com/Comfy-Org/ComfyUI.git /opt/comfyui && \
     cd /opt/comfyui && \
-    git fetch origin ${COMFYUI_VERSION} && \
-    git checkout FETCH_HEAD
+    git checkout ${COMFYUI_VERSION}
 
 # Clones the ComfyUI Manager repository and checks out the latest release; ComfyUI Manager is an extension for ComfyUI that enables users to install
 # custom nodes and download models directly from the ComfyUI interface; instead of installing it to "/opt/comfyui/custom_nodes/ComfyUI-Manager", which
@@ -28,10 +27,9 @@ RUN git clone --depth=1 https://github.com/Comfy-Org/ComfyUI.git /opt/comfyui &&
 # location upon startup; the reason for this is that the ComfyUI Manager must be installed in the same directory that it installs custom nodes to, but
 # this directory is mounted as a volume, so that the custom nodes are not installed inside of the container and are not lost when the container is
 # removed; this way, the custom nodes are installed on the host machine
-RUN git clone --depth=1 https://github.com/Comfy-Org/ComfyUI-Manager.git /opt/comfyui-manager && \
+RUN git clone https://github.com/Comfy-Org/ComfyUI-Manager.git /opt/comfyui-manager && \
     cd /opt/comfyui-manager && \
-    git fetch origin ${COMFYUI_MANAGER_VERSION} && \
-    git checkout FETCH_HEAD
+    git checkout ${COMFYUI_MANAGER_VERSION}
 
 # Installs the required Python packages for both ComfyUI and the ComfyUI Manager
 RUN pip install \

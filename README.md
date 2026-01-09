@@ -187,7 +187,7 @@ If you want to use the bleeding edge development version of the Docker image, yo
 ```shell
 git clone https://github.com/lecode-official/comfyui-docker.git
 cd comfyui-docker
-docker build --tag lecode/comfyui-docker:latest source
+docker build --tag comfyui-docker:latest source
 ```
 
 Now, a container can be started like so:
@@ -205,7 +205,7 @@ docker run \
     --publish 8188:8188 \
     --runtime nvidia \
     --gpus all \
-    lecode/comfyui-docker:latest
+    comfyui-docker:latest
 ```
 
 ## License
