@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.6.3 (January 9, 2026)
+
+- This is another emergency release to fix an issue in v0.6.2 where the ComfyUI Docker image failed to build, because the build arguments for the versions of ComfyUI and ComfyUI Manager were defined before the `FROM` instruction in the Dockerfile. This only caused an issue now, because the "v" prefix in the ComfyUI version (e.g., "v0.8.2") was removed and then interpolated directly into the `git checkout` command, which led Git to fail with an error stating that the path spec "v" does not exist. The build arguments for the ComfyUI and ComfyUI Manager versions have now been moved to be defined after the `FROM` instruction in the Dockerfile.
+- The ComfyUI, ComfyUI Manager, PyTorch, CUDA, and cuDNN versions were not passed as build arguments in the GitHub Actions workflow file when building the Docker image. This has now been fixed by passing the respective `build-args` to the build-push action.
+- The tags with only the ComfyUI Docker major version that included the PyTorch, CUDA, and cuDNN versions were accidentally being created, even though the zero version should not have a tag with only the major version. This has now been fixed by adding the necessary condition to the tag creation step in the GitHub Actions workflow file.
+- Instead of using `apt`, which does not have a guaranteed stable interface, the `apt-get` command is now used in the Dockerfile to install dependencies. Also, the cached archives are now being removed after installing the packages in addition to the package lists to further reduce the image size.
+
 ## v0.6.2 (January 9, 2026)
 
 - This is an emergency release to fix an issue in v0.6.1 where the GitHub Actions workflow did not correctly set the output variable for the version combinations due to a typo in the variable name. This caused the build process to fail when trying to build images for different CUDA and cuDNN versions. The typo has been fixed by changing `version_combinations` to `version-combinations` in the relevant line of the workflow file.
