@@ -1,6 +1,6 @@
 
-# A workflow, which builds the ComfyUI Docker image and publishes it to the GitHub Container Registry
-name: Create and publish a Docker image
+# A workflow, which builds the ComfyUI Docker images and publishes them to the GitHub Container Registry
+name: Build & Publish ComfyUI
 
 # Configures this workflow to run when a tag was pushed to the repository that matches the pattern "v[0-9]+.[0-9]+.[0-9]+", which is a semantic
 # versioning pattern; this token will be created when a new release is created; the release event cannot be used, because the docker/metadata-action
@@ -10,62 +10,59 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
-# Defines two custom environment variables for the host name of the registry (ghcr.io for the GitHub Container Registry) and the name of the image,
-# which is set to the name of the repository
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
-# This workflow has a single job, which builds the Docker image and publishes it to the GitHub Container Registry
+# This workflow has two jobs: (1) the first job extracts the versions of Comfy UI, ComfyUI Manager, PyTorch, CUDA, and cuDNN from the Dockerfile;
+# these are arguments for the Dockerfile and can be used to build multiple images with different versions of the dependencies; the versions extracted
+# from the Dockerfile are the default versions, which are used when building the default ComfyUI Docker image that will be tagged with "latest"; the
+# PyTorch version is then used to get all tags of the official PyTorch Docker image that match the specified PyTorch version; from these tags, the
+# supported combinations of CUDA and cuDNN versions are extracted, which are then used to build multiple ComfyUI Docker images with different CUDA and
+# cuDNN versions; the results of the first job is a matrix of version combinations; (2) the second job uses this matrix to build multiple ComfyUI
+# Docker images with different combinations of CUDA and cuDNN versions and pushes them to the GitHub Container Registry
 jobs:
 
-  # The `build-and-publish` builds the Docker image, and publishes it to the GitHub Container Registry
-  build-and-publish:
+  # The "generate-version-combinations" job extracts the versions of ComfyUI, ComfyUI Manager, PyTorch, CUDA, and cuDNN from the Dockerfile, and
+  # generates a matrix of version combinations that is used in the next job to build multiple ComfyUI Docker images with different CUDA and cuDNN
+  # versions
+  generate-version-combinations:
 
-    # This job will run on an Ubuntu GitHub runner, which is a good default choice and it comes with Docker pre-installed
+    # This job will run on a GitHub runner with the latest version of Ubuntu, which is a good default choice
     runs-on: ubuntu-latest
 
-    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
+    # The first job outputs a matrix of version combinations that is used in the next job to build multiple ComfyUI Docker images with different
+    # CUDA and cuDNN versions
+    outputs:
+      version-combinations: ${{ steps.generate-version-combinations.outputs.version-combinations }}
 
-    # This job 1) checks out the repository, 2) logs in to the GitHub Container Registry, 3) extracts metadata for the Docker image, 4) builds and
-    # pushes the Docker image, and 5) generates an artifact attestation for the image
+    # This job (1) checks out the repository, (2) installs Python, which is used in the next step, and (3) generates the combinations of ComfyUI,
+    # ComfyUI Manager, PyTorch CUDA, and cuDNN versions
     steps:
 
       # Checks out the repository so that the workflow can access the files in the repository
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # Installs Python, which is used to extract the version of ComfyUI and the ComfyUI Manager from the Dockerfile using a regular expression
+      # Installs Python, which is used to extract the versions of ComfyUI, ComfyUI Manager, PyTorch, CUDA and cuDNN from the Dockerfile using regular
+      # expressions, and to call the Docker Hub API to get the supported CUDA and cuDNN versions for the PyTorch Docker image with the specified
+      # PyTorch version
       - name: Install Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
-      # Logs in to the GitHub Container Registry registry using the account of the user that triggered the workflow run and the GitHub token that is
-      # an automatically generated secret that is usually only used to access the repository (the permissions defined above allow the token to also
-      # publish Docker images to the GitHub Container Registry) that will publish the packages; once published, the packages are scoped to the account
-      # defined here
-      - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Extracts the versions of ComfyUI and the ComfyUI Manager from the Dockerfile using a Python script; the versions are written to the output
-      # file, which are available in subsequent steps under steps.versions.outputs.COMFYUI_VERSION and steps.versions.outputs.COMFYUI_MANAGER_VERSION;
-      # the versions are used to tag the Docker image, so that users know which versions of ComfyUI and the ComfyUI Manager are included in the image
-      - name: Extract ComfyUI & ComfyUI Manager Versions
-        id: versions
+      # Extracts the versions of ComfyUI, ComfyUI Manager, PyTorch, CUDA, and cuDNN from the Dockerfile using a Python script; the PyTorch version is
+      # then used to get the supported CUDA and cuDNN versions for the official PyTorch Docker image from the Docker Hub API; then a matrix of version
+      # combinations is generated, which is used in the next job to build multiple ComfyUI Docker images with different CUDA and cuDNN versions; the
+      # version combination that was extracted from the Dockerfile is marked as the default combination, which will be used to build the default
+      # ComfyUI Docker image that will be tagged with "latest"
+      - name: Generate Version Combinations
+        id: generate-version-combinations
         shell: python
         run: |
+          import json
           import os
           import re
+          import urllib.error
+          import urllib.parse
+          import urllib.request
 
           def get_version(version_variable_name: str) -> str:
             with open('source/Dockerfile', mode='r', encoding='utf-8') as dockerfile:
@@ -76,27 +73,175 @@ jobs:
               )
               return match.group(1) if match else 'unknown'
 
-          with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output_file:
-            output_file.write(f'COMFYUI_VERSION={get_version('COMFYUI_VERSION')}\n')
-            output_file.write(f'COMFYUI_MANAGER_VERSION={get_version('COMFYUI_MANAGER_VERSION')}\n')
+          def get_docker_hub_image_tags(namespace: str, repository: str, tag_prefix: str) -> list[str]:
+            namespace = urllib.parse.quote(namespace)
+            repository = urllib.parse.quote(repository)
+            tag_prefix = urllib.parse.quote(tag_prefix)
+            url = f'https://hub.docker.com/v2/namespaces/{namespace}/repositories/{repository}/tags?ordering=last_updated&name={tag_prefix}'
 
-      # Extracts metadata from the Git repository and GitHub, which are then used to label and tag the Docker image that will be build in the next
-      # step; the "id" property specifies that the output of this step will be available in subsequent steps under the name "metadata"; tags for the
-      # SHA of the commit, the full semantic version extracted from the current tag (e.g., tag "v1.2.3" will be extracted as "1.2.3"), and the major
-      # and minor version extracted from the current version (e.g., tag "v1.2.3" will be extracted as "1.2"), as well as a "latest" tag are added;
-      # besides the hardcoded labels for the title and authors of the image, the GitHub description, GitHub license, GitHub revision, GitHub source
-      # URL, GitHub URL, and creation date and time are extracted as labels
-      - name: Extract Tags & Labels for Docker
+            image_tags: list[str] = []
+            try:
+              with urllib.request.urlopen(url) as response:
+                if response.status != 200:
+                  print(f'Error fetching tags from Docker Hub: HTTP {response.status}')
+                  return image_tags
+                data = response.read().decode(response.headers.get_content_charset("utf-8"))
+                json_data = json.loads(data)
+                for result in json_data.get('results', []):
+                  tag_name = result.get('name', '')
+                  if tag_name.startswith(tag_prefix):
+                    image_tags.append(tag_name)
+            except urllib.error.URLError as exception:
+              print(f'Error fetching tags from Docker Hub: {exception}')
+            return image_tags
+
+          def get_supported_cuda_and_cudnn_version_combinations(pytorch_version: str) -> list[tuple[str, str]]:
+            pytorch_image_tags = get_docker_hub_image_tags(namespace='pytorch', repository='pytorch', tag_prefix=f'{pytorch_version}-cuda')
+            supported_version_combinations: list[tuple[str, str]] = []
+            for tag in pytorch_image_tags:
+              match = re.search(r'^' + re.escape(pytorch_version) + r'-cuda([0-9\.]+)-cudnn([0-9\.]+)-runtime$', tag)
+              if match:
+                cuda_version = match.group(1)
+                cudnn_version = match.group(2)
+                supported_version_combinations.append((cuda_version, cudnn_version))
+            return supported_version_combinations
+
+          comfyui_version = get_version('COMFYUI_VERSION')
+          comfyui_manager_version = get_version('COMFYUI_MANAGER_VERSION')
+          pytorch_version = get_version('PYTORCH_VERSION')
+          default_cuda_version = get_version('CUDA_VERSION')
+          default_cudnn_version = get_version('CUDNN_VERSION')
+
+          version_combinations: list[dict[str, str | bool]] = []
+          supported_cuda_and_cudnn_version_combinations: list[tuple[str, str]] = get_supported_cuda_and_cudnn_version_combinations(pytorch_version)
+          for cuda_version, cudnn_version in supported_cuda_and_cudnn_version_combinations:
+            version_combinations.append({
+              'comfyui_version': comfyui_version,
+              'comfyui_manager_version': comfyui_manager_version,
+              'pytorch_version': pytorch_version,
+              'cuda_version': cuda_version,
+              'cudnn_version': cudnn_version,
+              'is_default': (cuda_version == default_cuda_version and cudnn_version == default_cudnn_version)
+            })
+
+          with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output_file:
+            output_file.write(f'version_combinations={json.dumps({'include': version_combinations})}\n')
+
+  # The "build-and-publish" job builds the Docker images, and publishes them to the GitHub Container Registry
+  build-and-publish:
+
+    # This job will run on an Ubuntu GitHub runner, which is a good default choice and it comes with Docker pre-installed
+    runs-on: ubuntu-latest
+
+    # This job requires the version combinations that were generated in the previous job
+    needs: generate-version-combinations
+
+    # This job is run multiple times in parallel, once for each combination of ComfyUI, ComfyUI Manager, PyTorch, CUDA, and cuDNN versions; the
+    # combinations are provided by the "generate-version-combinations" job in the "version-combinations" output
+    strategy:
+      matrix: ${{ fromJson(needs.generate-version-combinations.outputs.version-combinations) }}
+
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job; the `contents: read` permission is required to check out the
+    # repository, the `packages: write` permission is required to publish Docker images to the GitHub Container Registry, the `attestations: write`
+    # permission is required to publish attestations to the GitHub Container Registry, and the `id-token: write` permission is required to generate
+    # OpenID Connect tokens to authenticate to the GitHub Container Registry
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
+    # This job (1) checks out the repository, (2) logs in to the GitHub Container Registry registry, (3) creates the tags and labels for the Docker
+    # image, (4) builds the ComfyUI Docker image with the current combination of dependency versions and pushes it to the GitHub Container Registry,
+    # and (5) generates an attestation for the Docker image and pushes it to the GitHub Container Registry
+    steps:
+
+      # Checks out the repository so that the workflow can access the files in the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      # Logs in to the GitHub Container Registry registry using the account of the user that triggered the workflow run and the GitHub token, which is
+      # an automatically generated secret that is usually only used to access the repository; the permissions defined above allow the token to also
+      # publish Docker images to the GitHub Container Registry; once published, the packages are scoped to the specified account
+      # here
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Creates the name, tags, and labels for the ComfyUI Docker image; the metadata-action extracts information from the Git repository and the
+      # GitHub actions workflow; it produces an image name, a version number, tags, labels, annotations, and other metadata for the Docker image; the
+      # image name, tags, and labels can be customized using the "images", "tags", and "labels" inputs; the flavor input can be used to tell the
+      # metadata-action if it should automatically create a "latest" tag or not
+      - name: Create Tags & Labels for the Docker Image
         id: docker-image-metadata
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+          # A list of new-line-separated image names, which are used as base names for the tags; here, the image name is set to the GitHub Container
+          # Registry followed by the repository name (which includes the owner name); this will result in "ghcr.io/lecode-official/comfyui-docker"
+          images: ghcr.io/${{ github.repository }}
+
+          # The flavor input is used to tell the metadata-action if it should automatically create a "latest" tag or not; here, the "latest" tag is
+          # only created for the default combination of dependency versions, which was extracted from the Dockerfile
+          flavor: |
+            latest=${{ matrix.is_default }}
+
+          # A list of new-line-separated tags to add to the Docker image; the type defines which metadata is used to create the tag: "sha" will use
+          # the commit SHA and "semver" will use the version number extracted from the Git tag that triggered the workflow; the "pattern" defines how
+          # the tag is constructed: "{{version}}" is replaced with the full semantic version, "{{major}}" with the major version, and "{{minor}}" with
+          # the minor version; the "enable" condition defines if the tag should be created or not; here, the "enable" condition is used to disable the
+          # creation of certain tags for non-default combinations of dependency versions (all non-default combinations of dependency versions will be
+          # tagged with the PyTorch, CUDA and cuDNN versions, while the default combination will additionally be tagged with simpler tags not
+          # including the dependency versions)
+          #
+          # The following tags are only created for the default combination:
+          #
+          # - The SHA of the commit from which the ComfyUI Docker image was built
+          # - The major version of ComfyUI Docker (only if the major version is not "0")
+          # - The major version of ComfyUI Docker and the ComfyUI version (only if the major version is not "0")
+          # - The major version of ComfyUI Docker, the ComfyUI version, and the ComfyUI Manager version (only if the major version is not "0")
+          # - The major and minor version of ComfyUI Docker
+          # - The major and minor version of ComfyUI Docker, and the ComfyUI version
+          # - The major and minor version of ComfyUI Docker, the ComfyUI version, and the ComfyUI Manager version
+          # - The full semantic version of ComfyUI Docker
+          # - The full semantic version of ComfyUI Docker and the ComfyUI version
+          # - The full semantic version of ComfyUI Docker, the ComfyUI version, and the ComfyUI Manager version
+          #
+          # The following tags are created for all combinations:
+          #
+          # - The major version of ComfyUI Docker, ComfyUI version, ComfyUI Manager version, PyTorch version, CUDA version, and cuDNN version (only if
+          #   the major version is not "0")
+          # - The major version of ComfyUI Docker, ComfyUI version, PyTorch version, CUDA version, and cuDNN version (only if the major version is not
+          #   "0")
+          # - The major and minor version of ComfyUI Docker, ComfyUI version, ComfyUI Manager version, PyTorch version, CUDA version, and cuDNN
+          #   version
+          # - The major and minor version of ComfyUI Docker, ComfyUI version, PyTorch version, CUDA version, and cuDNN version
+          # - The full semantic version of ComfyUI Docker, ComfyUI version, ComfyUI Manager version, PyTorch version, CUDA version, and cuDNN version
+          # - The full semantic version of ComfyUI Docker, ComfyUI version, PyTorch version, CUDA version, and cuDNN version
           tags: |
-            type=sha
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{version}}-comfyui-${{ steps.versions.outputs.COMFYUI_VERSION }}
-            type=semver,pattern={{version}}-comfyui-${{ steps.versions.outputs.COMFYUI_VERSION }}-comfyui-manager-${{ steps.versions.outputs.COMFYUI_MANAGER_VERSION }}
+            type=sha,enable=${{ matrix.is_default }}
+            type=semver,pattern={{major}},enable=${{ matrix.is_default && !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }},enable=${{ matrix.is_default && !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }},enable=${{ matrix.is_default && !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ matrix.is_default }}
+            type=semver,pattern={{major}}.{{minor}}-comfyui-${{ matrix.comfyui_version }},enable=${{ matrix.is_default }}
+            type=semver,pattern={{major}}.{{minor}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }},enable=${{ matrix.is_default }}
+            type=semver,pattern={{version}},enable=${{ matrix.is_default }}
+            type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }},enable=${{ matrix.is_default }}
+            type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }},enable=${{ matrix.is_default }}
+            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+            type=semver,pattern={{major}}.{{minor}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+            type=semver,pattern={{major}}.{{minor}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+            type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+            type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+
+          # A list of new-line-separated labels to add to the Docker image; here, two labels are added: one for the image title and one for the image
+          # authors; by default, the metadata-action will add most of the labels defined in the Open Container Initiative (OCI) Image Specification,
+          # but the authors label is not included and the default value for the title label is the repository name
           labels: |
             org.opencontainers.image.title=ComfyUI Docker
             org.opencontainers.image.authors=David Neumann <david.neumann@lecode.de>
@@ -104,7 +249,7 @@ jobs:
       # Builds the Docker image for ComfyUI; if the build succeeds, it is pushed to the GitHub Container Registry; the "context" parameter specifies
       # the build context, which is the directory that contains the Dockerfile; the tags and labels extracted in the previous step are used to tag
       # and label the image
-      - name: Build and Push Docker Image
+      - name: Build and Push the Docker Image
         id: build-and-push-docker-image
         uses: docker/build-push-action@v6
         with:
@@ -118,6 +263,6 @@ jobs:
       - name: Generate Artifact Attestation
         uses: actions/attest-build-provenance@v3
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ghcr.io/${{ github.repository }}
           subject-digest: ${{ steps.build-and-push-docker-image.outputs.digest }}
           push-to-registry: true
