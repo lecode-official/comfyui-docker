@@ -232,8 +232,8 @@ jobs:
             type=semver,pattern={{version}},enable=${{ matrix.is_default }}
             type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }},enable=${{ matrix.is_default }}
             type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }},enable=${{ matrix.is_default }}
-            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
-            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
+            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=semver,pattern={{major}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
             type=semver,pattern={{major}}.{{minor}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
             type=semver,pattern={{major}}.{{minor}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
             type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
@@ -255,6 +255,12 @@ jobs:
         with:
           context: source
           push: true
+          build-args: |
+            COMFYUI_VERSION=${{ matrix.comfyui_version }}
+            COMFYUI_MANAGER_VERSION=${{ matrix.comfyui_manager_version }}
+            PYTORCH_VERSION=${{ matrix.pytorch_version }}
+            CUDA_VERSION=${{ matrix.cuda_version }}
+            CUDNN_VERSION=${{ matrix.cudnn_version }}
           tags: ${{ steps.docker-image-metadata.outputs.tags }}
           labels: ${{ steps.docker-image-metadata.outputs.labels }}
 
