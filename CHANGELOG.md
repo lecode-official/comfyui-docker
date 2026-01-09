@@ -1,14 +1,15 @@
 # Changelog
 
-## v0.6.0 (January 8, 2026)
+## v0.6.0 (January 9, 2026)
 
-- Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.8.0, CUDA 12.9, and cuDNN 9 to PyTorch 2.9.1, CUDA 13.0, and cuDNN 9).
+- Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.8.0, CUDA 12.9, and cuDNN 9 to PyTorch 2.9.1, CUDA 12.8, and cuDNN 9).
 - Updated the ComfyUI version to the latest version (from ComfyUI 0.3.49 to ComfyUI 0.8.2).
 - Updated the ComfyUI Manager version to the latest version (from ComfyUI Manager 3.35 to ComfyUI Manager 4.0.5).
 - Updated the versions of the checkout action, Python setup action, and attest build provenance action in the GitHub Actions workflow to their latest versions.
 - The outputs of ComfyUI are now stored outside of the container in a directory on the host system. This prevents the loss of outputs when the container is removed. The read me was updated to reflect this change.
 - A Docker Compose file was added to the repository to make running, managing, and updating ComfyUI Docker easier. The read me was updated to include instructions on how to use Docker Compose.
-- This version of ComfyUI Docker was made possible by the contributions of [Alex Marinov](@alex-marinov).
+- The ComfyUI and ComfyUI Manager repositories are now fully cloned instead of using the `--depth 1` option. Although this increases the size of the image, the size increase is negligible compared to the overall image size. This change now enables users to update ComfyUI and ComfyUI Manager from within the ComfyUI Manager interface, independent of the Docker image version.
+- This version of ComfyUI Docker was made possible by the contributions of [Patrick Kranz](@LokiMidgard) and [Alex Marinov](@alex-marinov).
 
 ## v0.5.0 (August 12, 2025)
 
