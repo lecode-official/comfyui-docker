@@ -4,7 +4,7 @@ name: comfyui-docker
 
 services:
   comfyui:
-    image: ghcr.io/lecode-official/comfyui-docker:latest
+    image: ghcr.io/lecode-official/comfyui-docker:${IMAGE_TAG:-latest}
     container_name: comfyui
     restart: unless-stopped
     environment:

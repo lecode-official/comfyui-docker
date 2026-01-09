@@ -84,8 +84,10 @@
         "photomaker",
         "PYTHONPATH",
         "pytorch",
+        "startswith",
         "Subpack",
         "unet",
+        "urlopen",
         "vsicons"
     ]
 }

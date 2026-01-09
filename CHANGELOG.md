@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.1 (January 9, 2026)
+
+- In order to allow users to choose a specific CUDA version when pulling the image, the Dockerfile was modified to also allow the specification of the PyTorch, CUDA, and cuDNN versions as build arguments. The GitHub Actions workflow was updated to build images for all available combinations of CUDA and cuDNN for the version of PyTorch used in the Dockerfile. The read me was updated to reflect this change.
+
 ## v0.6.0 (January 9, 2026)
 
 - Updated the base image of the Dockerfile to the latest version of PyTorch (from PyTorch 2.8.0, CUDA 12.9, and cuDNN 9 to PyTorch 2.9.1, CUDA 12.8, and cuDNN 9).
