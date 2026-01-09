@@ -125,7 +125,7 @@ jobs:
             })
 
           with open(os.environ['GITHUB_OUTPUT'], mode='a', encoding='utf-8') as output_file:
-            output_file.write(f'version_combinations={json.dumps({'include': version_combinations})}\n')
+            output_file.write(f'version-combinations={json.dumps({'include': version_combinations})}\n')
 
   # The "build-and-publish" job builds the Docker images, and publishes them to the GitHub Container Registry
   build-and-publish:

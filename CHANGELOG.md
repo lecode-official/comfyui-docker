@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.2 (January 9, 2026)
+
+- This is an emergency release to fix an issue in v0.6.1 where the GitHub Actions workflow did not correctly set the output variable for the version combinations due to a typo in the variable name. This caused the build process to fail when trying to build images for different CUDA and cuDNN versions. The typo has been fixed by changing `version_combinations` to `version-combinations` in the relevant line of the workflow file.
+
 ## v0.6.1 (January 9, 2026)
 
 - In order to allow users to choose a specific CUDA version when pulling the image, the Dockerfile was modified to also allow the specification of the PyTorch, CUDA, and cuDNN versions as build arguments. The GitHub Actions workflow was updated to build images for all available combinations of CUDA and cuDNN for the version of PyTorch used in the Dockerfile. The read me was updated to reflect this change.
