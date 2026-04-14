@@ -151,9 +151,10 @@ jobs:
       attestations: write
       id-token: write
 
-    # This job (1) checks out the repository, (2) logs in to the GitHub Container Registry registry, (3) creates the tags and labels for the Docker
-    # image, (4) builds the ComfyUI Docker image with the current combination of dependency versions and pushes it to the GitHub Container Registry,
-    # and (5) generates an attestation for the Docker image and pushes it to the GitHub Container Registry
+    # This job (1) checks out the repository, (2) logs in to the GitHub Container Registry registry, (3) extracts the version number of the release
+    # from the name of the tag that triggered the workflow execution, (4) creates the tags and labels for the Docker image, (5) builds the ComfyUI
+    # Docker image with the current combination of dependency versions and pushes it to the GitHub Container Registry, and (6) generates an
+    # attestation for the Docker image and pushes it to the GitHub Container Registry
     steps:
 
       # Checks out the repository so that the workflow can access the files in the repository
@@ -170,6 +171,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Parses the name of the Git tag that triggered the workflow execution to extract the version number of the release; this is necessary, because
+      # the tag name is prefixed with a "v" (e.g., "v0.1.0"), but the version label in the Docker image should not include this prefix (e.g.,
+      # "0.1.0"); the extracted version number is then set as an output of this step, which can be used in the next step to set the version label for
+      # the Docker image
+      - name: Extract Version Number From Git Tag
+        id: extract-version-number-from-git-tag
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       # Creates the name, tags, and labels for the ComfyUI Docker image; the metadata-action extracts information from the Git repository and the
       # GitHub actions workflow; it produces an image name, a version number, tags, labels, annotations, and other metadata for the Docker image; the
@@ -239,12 +248,15 @@ jobs:
             type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
             type=semver,pattern={{version}}-comfyui-${{ matrix.comfyui_version }}-comfyui-manager-${{ matrix.comfyui_manager_version }}-pytorch-${{ matrix.pytorch_version }}-cuda-${{ matrix.cuda_version }}-cudnn-${{ matrix.cudnn_version }}
 
-          # A list of new-line-separated labels to add to the Docker image; here, two labels are added: one for the image title and one for the image
-          # authors; by default, the metadata-action will add most of the labels defined in the Open Container Initiative (OCI) Image Specification,
-          # but the authors label is not included and the default value for the title label is the repository name
+          # A list of new-line-separated labels to add to the Docker image; here, three labels are added: one for the image title, one for the image
+          # authors, and one for the image version; by default, the metadata-action will add most of the labels defined in the Open Container
+          # Initiative (OCI) Image Specification, but the authors label is not included and the default value for the title label is the repository
+          # name, which is not ideal; also, for some reason, the default value for the version label is not correctly extracted from the Git tag, so
+          # it is set manually here based on the name of the Git tag that triggered the workflow
           labels: |
             org.opencontainers.image.title=ComfyUI Docker
             org.opencontainers.image.authors=David Neumann <david.neumann@lecode.de>
+            org.opencontainers.image.version=${{ steps.extract-version-number-from-git-tag.outputs.version }}
 
       # Builds the Docker image for ComfyUI; if the build succeeds, it is pushed to the GitHub Container Registry; the "context" parameter specifies
       # the build context, which is the directory that contains the Dockerfile; the tags and labels extracted in the previous step are used to tag
