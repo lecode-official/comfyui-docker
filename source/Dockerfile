@@ -8,8 +8,8 @@ ARG CUDNN_VERSION=9
 FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime
 
 # Defines build arguments for the versions of ComfyUI and ComfyUI Manager to use
-ARG COMFYUI_VERSION=0.8.2
-ARG COMFYUI_MANAGER_VERSION=4.0.5
+ARG COMFYUI_VERSION=0.22.2
+ARG COMFYUI_MANAGER_VERSION=4.2.1
 
 # Installs Git, because ComfyUI and the ComfyUI Manager are installed by cloning their respective Git repositories
 RUN apt-get update --assume-yes && \
@@ -51,4 +51,5 @@ EXPOSE 8188
 # mounted to the container and symlink the ComfyUI Manager to the correct directory; it will also create a user with the same UID and GID as the user
 # that started the container, so that the files created by the container are owned by the user that started the container and not the root user
 ADD entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
