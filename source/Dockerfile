@@ -1,6 +1,6 @@
 
 # Defines build arguments for the versions of PyTorch, CUDA, and cuDNN to use
-ARG PYTORCH_VERSION=2.9.1
+ARG PYTORCH_VERSION=2.11.0
 ARG CUDA_VERSION=12.8
 ARG CUDNN_VERSION=9
 
@@ -8,15 +8,19 @@ ARG CUDNN_VERSION=9
 FROM pytorch/pytorch:${PYTORCH_VERSION}-cuda${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime
 
 # Defines build arguments for the versions of ComfyUI and ComfyUI Manager to use
-ARG COMFYUI_VERSION=0.8.2
-ARG COMFYUI_MANAGER_VERSION=4.0.5
+ARG COMFYUI_VERSION=0.19.0
+ARG COMFYUI_MANAGER_VERSION=4.1
 
-# Installs Git, because ComfyUI and the ComfyUI Manager are installed by cloning their respective Git repositories
+# Installs Git, because ComfyUI and the ComfyUI Manager are installed by cloning their respective Git repositories; also installs sudo, because the
+# entrypoint script runs ComfyUI as another user, installs Python venv, which is needed to create a virtual environment for the Python packages that
+# need to be installed for both ComfyUI and the ComfyUI Manager, and installs some dependencies of custom ComfyUI nodes
 RUN apt-get update --assume-yes && \
     apt-get install --assume-yes \
         git \
         sudo \
-        libgl1-mesa-glx \
+        python3.12-venv \
+        libgl1 \
+        libglx-mesa0 \
         libglib2.0-0 && \
     rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
 
@@ -35,10 +39,12 @@ RUN git clone https://github.com/Comfy-Org/ComfyUI-Manager.git /opt/comfyui-mana
     cd /opt/comfyui-manager && \
     git checkout ${COMFYUI_MANAGER_VERSION}
 
-# Installs the required Python packages for both ComfyUI and the ComfyUI Manager
-RUN pip install \
-    --requirement /opt/comfyui/requirements.txt \
-    --requirement /opt/comfyui-manager/requirements.txt
+# Creates a virtual environment and installs the required Python packages for both ComfyUI and the ComfyUI Manager; a virtual environment is required,
+# because the base image uses an externally managed Python environment that does not allow system-wide package installations via pip
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install \
+        --requirement /opt/comfyui/requirements.txt \
+        --requirement /opt/comfyui-manager/requirements.txt
 
 # Sets the working directory to the ComfyUI directory
 WORKDIR /opt/comfyui

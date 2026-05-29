@@ -78,6 +78,7 @@
         "lecode",
         "libgl",
         "libglib",
+        "libglx",
         "libgthread",
         "loras",
         "Marinov",
@@ -88,6 +89,7 @@
         "Subpack",
         "unet",
         "urlopen",
+        "venv",
         "vsicons"
     ]
 }

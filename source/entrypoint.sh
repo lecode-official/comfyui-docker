@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Activates the virtual environment, which contains all the Python packages required by ComfyUI and the ComfyUI Manager
+source /opt/venv/bin/activate
+
 # Creates the directories for the models inside of the volume that is mounted from the host
 echo "Creating directories for models..."
 MODEL_DIRECTORIES=(
@@ -62,7 +65,7 @@ done
 if [ -z "$USER_ID" ] || [ -z "$GROUP_ID" ];
 then
     echo "Running container as $USER..."
-    exec /opt/conda/bin/python main.py \
+    exec python main.py \
         --port 8188 \
         --listen 0.0.0.0 \
         --disable-auto-launch \
@@ -76,8 +79,9 @@ else
     export PATH=$PATH:/home/comfyui-user/.local/bin
 
     echo "Running container as comfyui-user ($USER_ID:$GROUP_ID)..."
-    sudo --set-home --preserve-env=PATH --user \#$USER_ID \
-        /opt/conda/bin/python main.py \
+    chown --recursive $USER_ID:$GROUP_ID /opt/venv
+    sudo --set-home --preserve-env=PATH,VIRTUAL_ENV --user \#$USER_ID \
+        /opt/venv/bin/python main.py \
             --port 8188 \
             --listen 0.0.0.0 \
             --disable-auto-launch \
